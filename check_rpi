@@ -53,6 +53,12 @@ crit_thresh=70  # This is the default which can be overridden with commandline p
 ### Do not edit below this line! ###
 ####################################
 
+# This plugin depends on locales being English
+
+export LANG=C
+export LC_MESSAGES=C
+
+
 error_usage () {
   echo "Usage: $0 [-w <warning_threshold>] [-c <critical_threshold>]"
   exit 3
@@ -108,6 +114,10 @@ then
   return_status="WARNING"
 fi
 
+# READ Voltage
+
+corevolt=$(/opt/vc/bin/vcgencmd measure_volts core | sed -e "s/volt=//" -e "s/V//")
+
 # Produce Nagios output
-echo "TEMP ${return_status} - CPU temperature: $((cpu/1000)).$((cpu%1000))°C - GPU temperature: ${gpu}°C | cputemp=$((cpu/1000)).$((cpu%1000));${warn_thresh};${crit_thresh};0; gputemp=${gpu};${warn_thresh};${crit_thresh};0;"
+echo "TEMP ${return_status} - CPU temperature: $((cpu/1000)).$((cpu%1000))°C - GPU temperature: ${gpu}°C | cputemp=$((cpu/1000)).$((cpu%1000));${warn_thresh};${crit_thresh};0; gputemp=${gpu};${warn_thresh};${crit_thresh};0; corevolt=$corevolt"
 exit $return_code
