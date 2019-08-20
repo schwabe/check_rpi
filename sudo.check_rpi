@@ -1,0 +1,5 @@
+nagios  ALL=NOPASSWD: /opt/vc/bin/vcgencmd measure_temp
+nagios  ALL=NOPASSWD: /opt/vc/bin/vcgencmd measure_volts core
+nagios  ALL=NOPASSWD: /opt/vc/bin/vcgencmd measure_volts sdram_p
+
+
