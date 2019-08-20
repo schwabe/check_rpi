@@ -120,5 +120,5 @@ corevolt=$(sudo /opt/vc/bin/vcgencmd measure_volts core | sed -e "s/volt=//" -e 
 sdrampvolt=$(sudo /opt/vc/bin/vcgencmd measure_volts sdram_p | sed -e "s/volt=//" -e "s/V//")
 
 # Produce Nagios output
-echo "TEMP ${return_status} - CPU temperature: $((cpu/1000)).$((cpu%1000))°C - GPU temperature: ${gpu}°C | cputemp=$((cpu/1000)).$((cpu%1000));${warn_thresh};${crit_thresh};0; gputemp=${gpu};${warn_thresh};${crit_thresh};0; corevolt=$corevolt; sdrampvolt=$sdrampvolt"
+echo "TEMP ${return_status} - CPU temperature: $((cpu/1000)).$((cpu%1000))°C - GPU temperature: ${gpu}°C - Core Voltage: $corevolt - SDRAM P Voltage: $sdrampvolt | cputemp=$((cpu/1000)).$((cpu%1000));${warn_thresh};${crit_thresh};0; gputemp=${gpu};${warn_thresh};${crit_thresh};0; corevolt=$corevolt; sdrampvolt=$sdrampvolt"
 exit $return_code
