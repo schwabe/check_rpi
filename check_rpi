@@ -114,11 +114,67 @@ then
   return_status="WARNING"
 fi
 
-# READ Voltage
+################
+# READ Voltage #
+###############
 
 corevolt=$(sudo /opt/vc/bin/vcgencmd measure_volts core | sed -e "s/volt=//" -e "s/V//")
 sdrampvolt=$(sudo /opt/vc/bin/vcgencmd measure_volts sdram_p | sed -e "s/volt=//" -e "s/V//")
 
+
+
+
+####################
+# Get Status flags #
+###################
+
+STATUS=$(sudo /opt/vc/bin/vcgencmd get_throttled)
+STATUS=${STATUS#*=}
+
+UNDERVOLTED=0x1
+CAPPED=0x2
+THROTTLED=0x4
+HAS_UNDERVOLTED=0x10000
+HAS_CAPPED=0x20000
+HAS_THROTTLED=0x40000
+
+FLAGS=""
+
+if ((($STATUS&UNDERVOLTED)!=0)); then
+    FLAGS="${FLAGS} undervoltage"
+fi
+if ((($STATUS&THROTTLED)!=0)); then
+    FLAGS="${FLAGS} throtlling"
+fi
+if ((($STATUS&CAPPED)!=0)); then
+    FLAGS="${FLAGS} frequency_capped"
+fi
+if [ "$FLAGS" != "" ]; then
+    FLAGS="$FLAGS"
+    return_code=1
+    return_status="WARNING"
+fi
+
+HFLAGS=""
+if ((($STATUS&HAS_UNDERVOLTED)!=0)); then
+    HFLAGS="${HFLAGS} undervoltage"
+fi
+if ((($STATUS&HAS_THROTTLED)!=0)); then
+    HFLAGS="${HFLAGS} throtlled"
+fi
+if ((($STATUS&HAS_CAPPED)!=0)); then
+    HFLAGS="${HFLAGS} frequency_capped"
+fi
+if [ "${HFLAGS}" != "" ]; then
+    HFLAGS=", historic state:$HFLAGS"
+fi
+
+
+if [ "$FLAGS" == "" ]; then
+    FLAGS="Okay"
+fi
+FLAGS="$FLAGS$HFLAGS ($STATUS)"
+
 # Produce Nagios output
-echo "TEMP ${return_status} - CPU temperature: $((cpu/1000)).$((cpu%1000))°C - GPU temperature: ${gpu}°C - Core Voltage: $corevolt - SDRAM P Voltage: $sdrampvolt | cputemp=$((cpu/1000)).$((cpu%1000));${warn_thresh};${crit_thresh};0; gputemp=${gpu};${warn_thresh};${crit_thresh};0; corevolt=$corevolt; sdrampvolt=$sdrampvolt"
+echo "TEMP ${return_status} - Flags: ${FLAGS} - CPU temperature: $((cpu/1000)).$((cpu%1000))°C - GPU temperature: ${gpu}°C - Core Voltage: $corevolt - SDRAM P Voltage: $sdrampvolt | cputemp=$((cpu/1000)).$((cpu%1000));${warn_thresh};${crit_thresh};0; gputemp=${gpu};${warn_thresh};${crit_thresh};0; corevolt=$corevolt; sdrampvolt=$sdrampvolt"
 exit $return_code
