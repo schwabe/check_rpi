@@ -49,6 +49,8 @@ warn_thresh=60  # This is the default which can be overridden with commandline p
 # Critical threshold (degree celsius)
 crit_thresh=70  # This is the default which can be overridden with commandline parameters
 
+
+
 ####################################
 ### Do not edit below this line! ###
 ####################################
@@ -60,15 +62,21 @@ export LC_MESSAGES=C
 
 
 error_usage () {
-  echo "Usage: $0 [-w <warning_threshold>] [-c <critical_threshold>]"
-  exit 3
+    echo "Usage: $0 [-w <warning_threshold>] [-c <critical_threshold>] [-s]"
+    echo ""
+    echo "          -s enable using sudo for vcgencmd"
+    exit 3
 }
 
+
+VCGENCMD="/opt/vc/bin/vcgencmd"
+
 # Check commandline options
-while getopts 'w:c:' OPT; do
+while getopts 'w:c:s' OPT; do
   case $OPT in
     w) warn_thresh=$OPTARG ;;
     c) crit_thresh=$OPTARG ;;
+    s) VCGENCMD="sudo /opt/vc/bin/vcgencmd" ;;
     *) error_usage ;;
   esac
 done
@@ -97,7 +105,7 @@ return_status="OK"
 
 # Read temperature information
 cpu=$(</sys/class/thermal/thermal_zone0/temp)
-gpu=$(sudo /opt/vc/bin/vcgencmd measure_temp | sed -e "s/temp=//" -e "s/'C//")
+gpu=$(${VCGENCMD} measure_temp | sed -e "s/temp=//" -e "s/'C//")
 printf -v gpuint %.0f "$gpu"  # Round GPU temperature to integer
 
 # Check for errors
@@ -118,8 +126,8 @@ fi
 # READ Voltage #
 ###############
 
-corevolt=$(sudo /opt/vc/bin/vcgencmd measure_volts core | sed -e "s/volt=//" -e "s/V//")
-sdrampvolt=$(sudo /opt/vc/bin/vcgencmd measure_volts sdram_p | sed -e "s/volt=//" -e "s/V//")
+corevolt=$(${VCGENCMD} measure_volts core | sed -e "s/volt=//" -e "s/V//")
+sdrampvolt=$(${VCGENCMD} measure_volts sdram_p | sed -e "s/volt=//" -e "s/V//")
 
 
 
@@ -128,7 +136,7 @@ sdrampvolt=$(sudo /opt/vc/bin/vcgencmd measure_volts sdram_p | sed -e "s/volt=//
 # Get Status flags #
 ###################
 
-STATUS=$(sudo /opt/vc/bin/vcgencmd get_throttled)
+STATUS=$(${VCGENCMD} get_throttled)
 STATUS=${STATUS#*=}
 
 UNDERVOLTED=0x1
@@ -160,7 +168,7 @@ if ((($STATUS&HAS_UNDERVOLTED)!=0)); then
     HFLAGS="${HFLAGS} undervoltage"
 fi
 if ((($STATUS&HAS_THROTTLED)!=0)); then
-    HFLAGS="${HFLAGS} throtlled"
+    HFLAGS="${HFLAGS} throttled"
 fi
 if ((($STATUS&HAS_CAPPED)!=0)); then
     HFLAGS="${HFLAGS} frequency_capped"
